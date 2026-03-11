@@ -15,13 +15,11 @@ SERVICE_ACCOUNT_JSON_ENV = os.environ.get("SERVICE_ACCOUNT_JSON")
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
 
 SHEETS = [
-    {"id": "1gFCDWNxUKOXOBxBYMdvinjysF0-G_F9kvDWXKRqnXCY", "name": "rahul"},
     {"id": "1LcGz0Vzlwc87_SYL1iLwmMiCcO7UKlbh5Kd6OVeAIj8", "name": "amogh"},
     {"id": "1vWrSvBj7W5A2eF317Iw15FoJ74y7ezcT72Nb1eGjSUQ",  "name": "dvk"},
     {"id": "1cwj2lO7cnrKIdNi9cKnkb-R74NkX3Ck8rnfUmgizGus",  "name": "athyul"},
     {"id": "1MQpJSo7DAkQgqGCtWVu0EocifjwuOUEpyWULsHlQ65o",  "name": "arunansh"},
     {"id": "1wmWxhSBxpGXYXSPp1MiAhZ0w5Vhgd_SiF6fWnAu34RI",  "name": "vishwas"},
-    {"id": "1Buy6vmKX-hzP0VLXMJFD62dLIvTrfkr-nZU2lskpFlE",   "name": "yuvraj"},
 ]
 
 NUMERIC_COLS = [
