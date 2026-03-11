@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Zelantrix — Factory Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#07090f; --card:#0f1623; --card2:#161f30; --border:#1e2d45;
+  --text:#e8edf5; --muted:#7a8fa8; --green:#72C040; --blue:#1a73e8;
+  --orange:#fb8c00; --red:#e53935; --yellow:#fdd835; --r:14px; --t:.2s ease;
+}
+html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;overflow-x:hidden}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+/* TOP BAR */
+.topbar{position:sticky;top:0;z-index:100;background:rgba(7,9,15,.97);
+  backdrop-filter:blur(14px);border-bottom:1px solid var(--border);
+  padding:12px 28px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.logo{display:flex;align-items:center;gap:12px}
+.logo-icon{width:38px;height:38px;background:linear-gradient(135deg,var(--blue),#60a5fa);
+  border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
+.logo h1{font-size:1rem;font-weight:800;letter-spacing:-.01em}
+.logo p{font-size:.7rem;color:var(--muted);margin-top:2px}
+.topbar-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pill{padding:5px 14px;border-radius:999px;border:1.5px solid var(--border);
+  background:var(--card2);font-size:.75rem;font-weight:600;cursor:pointer;
+  transition:var(--t);color:var(--text);white-space:nowrap}
+.pill:hover{border-color:var(--blue);color:var(--blue)}
+.pill.on{border-color:var(--blue);color:var(--blue);background:rgba(26,115,232,.1)}
+.pill.factory.on{border-color:var(--orange);color:var(--orange);background:rgba(251,140,0,.1)}
+.sync-btn{padding:7px 18px;border-radius:999px;background:var(--blue);
+  color:#fff;font-size:.78rem;font-weight:700;cursor:pointer;border:none;
+  transition:var(--t);white-space:nowrap}
+.sync-btn:hover{background:#1557b0}
+.sync-btn:disabled{opacity:.5;cursor:not-allowed}
+.synced-at{font-size:.68rem;color:var(--muted)}
+
+/* LAYOUT */
+.wrap{max-width:1320px;margin:0 auto;padding:24px 20px}
+
+/* STAT CARDS */
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:24px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);
+  padding:18px 20px;position:relative;overflow:hidden;transition:var(--t);cursor:default}
+.stat-card:hover{border-color:rgba(26,115,232,.4);transform:translateY(-2px)}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,var(--ac,var(--blue)),transparent)}
+.sc-icon{position:absolute;right:16px;top:16px;font-size:1.5rem;opacity:.15}
+.sc-label{font-size:.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;
+  letter-spacing:.09em;margin-bottom:8px}
+.sc-value{font-size:1.8rem;font-weight:800;line-height:1;font-family:'JetBrains Mono',monospace}
+.sc-sub{font-size:.68rem;color:var(--muted);margin-top:5px}
+
+/* SECTION */
+.section{margin-bottom:24px}
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:10px}
+.sec-title{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);
+  display:flex;align-items:center;gap:7px}
+.sec-title span{width:3px;height:14px;background:var(--blue);border-radius:2px;display:inline-block}
+
+/* CHARTS ROW */
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px}
+@media(max-width:760px){.charts-row{grid-template-columns:1fr}}
+.chart-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:18px}
+.chart-title{font-size:.8rem;font-weight:700;margin-bottom:14px;color:var(--muted)}
+.chart-wrap{position:relative;height:200px}
+
+/* LEADERBOARD */
+.leaderboard{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.lb-row{display:grid;grid-template-columns:28px 1fr repeat(4,100px);align-items:center;
+  padding:12px 16px;border-bottom:1px solid rgba(30,45,69,.5);gap:8px;transition:var(--t)}
+.lb-row:last-child{border-bottom:none}
+.lb-row:hover{background:rgba(26,115,232,.04)}
+.lb-header{background:var(--card2);font-size:.68rem;font-weight:700;text-transform:uppercase;
+  letter-spacing:.07em;color:var(--muted);padding:10px 16px}
+.lb-rank{font-size:.9rem;font-weight:800;color:var(--muted);text-align:center}
+.lb-rank.gold{color:#ffd700}.lb-rank.silver{color:#c0c0c0}.lb-rank.bronze{color:#cd7f32}
+.lb-name{font-weight:700;font-size:.85rem;text-transform:capitalize}
+.lb-tab-badge{font-size:.62rem;background:rgba(251,140,0,.12);color:var(--orange);
+  border:1px solid rgba(251,140,0,.25);border-radius:999px;padding:1px 7px;margin-left:6px}
+.lb-num{font-family:'JetBrains Mono',monospace;font-size:.82rem;font-weight:600;text-align:right}
+.lb-bar-wrap{height:4px;background:var(--border);border-radius:2px;margin-top:4px}
+.lb-bar{height:100%;border-radius:2px;background:var(--blue);transition:width .6s ease}
+
+/* TABLE */
+.table-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.table-scroll{overflow-x:auto;max-height:500px;overflow-y:auto}
+table{width:100%;border-collapse:collapse;font-size:.78rem;white-space:nowrap}
+thead{position:sticky;top:0;z-index:5}
+th{padding:10px 14px;text-align:left;background:var(--card2);
+  font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;
+  color:var(--muted);border-bottom:1px solid var(--border)}
+td{padding:10px 14px;border-bottom:1px solid rgba(30,45,69,.4);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.015)}
+.mono{font-family:'JetBrains Mono',monospace;font-weight:600}
+.badge{display:inline-flex;align-items:center;padding:2px 9px;border-radius:999px;
+  font-size:.65rem;font-weight:700;white-space:nowrap}
+.badge.green{background:rgba(114,192,64,.12);color:var(--green);border:1px solid rgba(114,192,64,.2)}
+.badge.orange{background:rgba(251,140,0,.12);color:var(--orange);border:1px solid rgba(251,140,0,.2)}
+.badge.blue{background:rgba(26,115,232,.12);color:var(--blue);border:1px solid rgba(26,115,232,.2)}
+.badge.muted{background:rgba(122,143,168,.1);color:var(--muted);border:1px solid rgba(122,143,168,.15)}
+.badge.factory{background:rgba(251,140,0,.1);color:var(--orange);border:1px solid rgba(251,140,0,.2)}
+
+/* SEARCH */
+.search-row{display:flex;gap:8px;margin-bottom:12px;align-items:center;flex-wrap:wrap}
+.search-wrap{position:relative;flex:1;min-width:180px}
+.search-wrap input{width:100%;padding:9px 12px 9px 34px;border-radius:9px;
+  background:var(--card);border:1.5px solid var(--border);color:var(--text);
+  font-size:.8rem;outline:none;transition:var(--t);font-family:'Inter',sans-serif}
+.search-wrap input:focus{border-color:var(--blue)}
+.search-wrap::before{content:'🔍';position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:.75rem}
+.team-pills{display:flex;gap:6px;flex-wrap:wrap}
+
+/* PROGRESS */
+.pay-progress{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px 20px;margin-bottom:24px}
+.pp-label{display:flex;justify-content:space-between;font-size:.78rem;margin-bottom:6px}
+.pp-track{height:8px;background:var(--border);border-radius:4px}
+.pp-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--blue),var(--green));transition:width .8s ease}
+.pp-sub{display:flex;justify-content:space-between;font-size:.68rem;color:var(--muted);margin-top:6px}
+
+/* SPINNER */
+.spinner{display:flex;align-items:center;justify-content:center;padding:50px;color:var(--muted);gap:10px;font-size:.85rem}
+.spin{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--blue);
+  border-radius:50%;animation:spin 1s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.fadein{animation:fadeIn .3s ease both}
+
+/* EMPTY */
+.empty{text-align:center;padding:40px;color:var(--muted);font-size:.83rem}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="logo">
+    <div class="logo-icon">⚡</div>
+    <div>
+      <h1>Zelantrix Factory Dashboard</h1>
+      <p class="synced-at" id="synced-at">Loading…</p>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <button class="pill factory" id="factory-btn" onclick="toggleFactory()">🏭 All Tabs</button>
+    <button class="pill" id="view-rows-btn" onclick="showRows()">📋 Records</button>
+    <button class="sync-btn" id="sync-btn" onclick="refresh()">⟳ Refresh</button>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- STAT CARDS -->
+  <div class="stat-grid" id="stat-grid">
+    <div class="stat-card"><div class="sc-icon">⏱</div><div class="sc-label">Total Hours</div><div class="sc-value" id="s-hours">…</div><div class="sc-sub">all teams combined</div></div>
+    <div class="stat-card" style="--ac:var(--orange)"><div class="sc-icon">💰</div><div class="sc-label">Total Payment</div><div class="sc-value" id="s-pay">…</div><div class="sc-sub">across all records</div></div>
+    <div class="stat-card" style="--ac:var(--green)"><div class="sc-icon">✅</div><div class="sc-label">Paid Out</div><div class="sc-value" id="s-paid">…</div><div class="sc-sub" id="s-paid-sub">already paid</div></div>
+    <div class="stat-card" style="--ac:var(--red)"><div class="sc-icon">⏳</div><div class="sc-label">Pending</div><div class="sc-value" id="s-unpaid">…</div><div class="sc-sub">yet to be paid</div></div>
+    <div class="stat-card" style="--ac:var(--orange)"><div class="sc-icon">🏭</div><div class="sc-label">Factory Hours</div><div class="sc-value" id="s-fhours">…</div><div class="sc-sub">factory tabs only</div></div>
+    <div class="stat-card" style="--ac:var(--muted)"><div class="sc-icon">👥</div><div class="sc-label">Teams</div><div class="sc-value" id="s-teams">…</div><div class="sc-sub" id="s-rows-sub">tracking</div></div>
+  </div>
+
+  <!-- PAYMENT PROGRESS -->
+  <div class="pay-progress" id="pay-progress" style="display:none">
+    <div class="pp-label"><span style="font-weight:700">Payment Progress</span><span id="pp-pct" style="color:var(--green);font-weight:800">—</span></div>
+    <div class="pp-track"><div class="pp-fill" id="pp-fill" style="width:0%"></div></div>
+    <div class="pp-sub"><span id="pp-paid-lbl">₹0 paid</span><span id="pp-total-lbl">₹0 total</span></div>
+  </div>
+
+  <!-- CHARTS -->
+  <div class="charts-row" id="charts-row">
+    <div class="chart-card">
+      <div class="chart-title">📈 Hours by Team</div>
+      <div class="chart-wrap"><canvas id="chart-teams-hours"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">💰 Payment by Team</div>
+      <div class="chart-wrap"><canvas id="chart-teams-pay"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">📅 Daily Hours (last 30 days)</div>
+      <div class="chart-wrap"><canvas id="chart-trend-hours"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">📅 Daily Payment (last 30 days)</div>
+      <div class="chart-wrap"><canvas id="chart-trend-pay"></canvas></div>
+    </div>
+  </div>
+
+  <!-- LEADERBOARD -->
+  <div class="section">
+    <div class="sec-hdr">
+      <div class="sec-title"><span></span> Team Leaderboard</div>
+    </div>
+    <div class="leaderboard" id="leaderboard">
+      <div class="spinner"><div class="spin"></div> Loading…</div>
+    </div>
+  </div>
+
+  <!-- RECORDS TABLE -->
+  <div class="section" id="rows-section" style="display:none">
+    <div class="sec-hdr">
+      <div class="sec-title"><span></span> Records</div>
+      <span id="rows-count" style="font-size:.72rem;color:var(--muted)"></span>
+    </div>
+    <div class="search-row">
+      <div class="search-wrap"><input type="text" id="search-input" placeholder="Search records…" oninput="filterTable()"/></div>
+      <div class="team-pills" id="team-pills"></div>
+    </div>
+    <div class="table-wrap">
+      <div class="table-scroll">
+        <table id="records-table">
+          <thead id="records-thead"></thead>
+          <tbody id="records-tbody"><tr><td colspan="20" class="empty">Select a team or click Records to load</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── STATE ──────────────────────────────────────────────────────────────────
+let summaryData = null;
+let allRows = [];
+let filteredRows = [];
+let factoryOnly = false;
+let activeTeam = '';
+let teamColors = {};
+let charts = {};
+
+const PALETTE = ['#1a73e8','#72C040','#fb8c00','#e53935','#9c27b0','#00bcd4','#ff5722'];
+const CHART_DEFAULTS = {
+  responsive:true, maintainAspectRatio:false,
+  plugins:{legend:{display:false},tooltip:{backgroundColor:'#0f1623',borderColor:'#1e2d45',borderWidth:1,
+    titleColor:'#e8edf5',bodyColor:'#7a8fa8',padding:10,cornerRadius:8}},
+  scales:{x:{grid:{color:'rgba(30,45,69,.5)'},ticks:{color:'#7a8fa8',font:{size:10}}},
+          y:{grid:{color:'rgba(30,45,69,.5)'},ticks:{color:'#7a8fa8',font:{size:10}}}}
+};
+
+// ── INIT ───────────────────────────────────────────────────────────────────
+async function init() {
+  await loadSummary();
+  await loadRows();
+}
+
+// ── SUMMARY ────────────────────────────────────────────────────────────────
+async function loadSummary() {
+  const res = await fetch('/api/summary');
+  if (!res.ok) return;
+  summaryData = await res.json();
+  if (summaryData.error) { document.getElementById('synced-at').textContent = '⚠ ' + summaryData.error; return; }
+  renderStats(summaryData);
+  renderLeaderboard(summaryData.teams);
+  renderCharts(summaryData);
+  document.getElementById('synced-at').textContent = 'Last synced ' + summaryData.synced_at;
+}
+
+function renderStats(d) {
+  setText('s-hours',  fmt(d.total_hours) + ' hrs');
+  setText('s-pay',    '₹' + fmtN(d.total_payment));
+  setText('s-paid',   '₹' + fmtN(d.paid));
+  setText('s-unpaid', '₹' + fmtN(d.unpaid));
+  setText('s-fhours', fmt(d.factory_hours) + ' hrs');
+  setText('s-teams',  d.team_count);
+  setText('s-rows-sub', d.total_rows + ' total records');
+
+  if (d.total_payment > 0) {
+    const pct = Math.round((d.paid / d.total_payment) * 100);
+    document.getElementById('pay-progress').style.display = '';
+    document.getElementById('pp-fill').style.width = pct + '%';
+    document.getElementById('pp-pct').textContent = pct + '% paid';
+    document.getElementById('pp-paid-lbl').textContent = '₹' + fmtN(d.paid) + ' paid';
+    document.getElementById('pp-total-lbl').textContent = '₹' + fmtN(d.total_payment) + ' total';
+  }
+}
+
+function renderLeaderboard(teams) {
+  if (!teams || !teams.length) {
+    document.getElementById('leaderboard').innerHTML = '<div class="empty">No team data</div>';
+    return;
+  }
+  const maxH = Math.max(...teams.map(t => t.hours)) || 1;
+  const ranks = ['🥇','🥈','🥉'];
+  const rClass = ['gold','silver','bronze'];
+  teams.forEach((t, i) => { teamColors[t.name] = PALETTE[i % PALETTE.length]; });
+
+  document.getElementById('leaderboard').innerHTML = `
+    <div class="lb-row lb-header">
+      <div>#</div><div>Team</div>
+      <div style="text-align:right">Hours</div>
+      <div style="text-align:right">Payment</div>
+      <div style="text-align:right">Factory Rows</div>
+      <div style="text-align:right">Records</div>
+    </div>
+    ${teams.map((t,i) => `
+      <div class="lb-row fadein" style="cursor:pointer" onclick="filterByTeam('${t.name}')">
+        <div class="lb-rank${i<3?' '+rClass[i]:''}">${i<3?ranks[i]:i+1}</div>
+        <div>
+          <div class="lb-name">${t.name}${t.factory_rows>0?`<span class="lb-tab-badge">🏭 ${t.factory_rows} factory</span>`:''}</div>
+          <div class="lb-bar-wrap"><div class="lb-bar" style="width:${Math.round((t.hours/maxH)*100)}%;background:${teamColors[t.name]}"></div></div>
+        </div>
+        <div class="lb-num">${fmt(t.hours)} hrs</div>
+        <div class="lb-num">₹${fmtN(t.payment)}</div>
+        <div class="lb-num">${t.factory_rows > 0 ? '<span class="badge factory">'+t.factory_rows+'</span>' : '—'}</div>
+        <div class="lb-num">${t.rows}</div>
+      </div>`).join('')}`;
+}
+
+function renderCharts(d) {
+  // destroy old charts
+  Object.values(charts).forEach(c => c.destroy());
+  charts = {};
+
+  const teams = d.teams || [];
+  const labels = teams.map(t => t.name);
+  const colors = teams.map((t,i) => PALETTE[i%PALETTE.length]);
+
+  // Hours by team (bar)
+  charts.th = new Chart(document.getElementById('chart-teams-hours'), {
+    type:'bar',
+    data:{labels, datasets:[{data:teams.map(t=>t.hours), backgroundColor:colors, borderRadius:6, borderSkipped:false}]},
+    options:{...CHART_DEFAULTS, plugins:{...CHART_DEFAULTS.plugins}}
+  });
+
+  // Payment by team (bar)
+  charts.tp = new Chart(document.getElementById('chart-teams-pay'), {
+    type:'bar',
+    data:{labels, datasets:[{data:teams.map(t=>t.payment), backgroundColor:colors.map(c=>c+'cc'), borderRadius:6, borderSkipped:false}]},
+    options:{...CHART_DEFAULTS}
+  });
+
+  // Trend line - hours
+  const trend = d.trend || [];
+  const tLabels = trend.map(t => t.date.slice(5)); // MM-DD
+  charts.lh = new Chart(document.getElementById('chart-trend-hours'), {
+    type:'line',
+    data:{labels:tLabels, datasets:[{
+      data:trend.map(t=>t.hours), borderColor:'#1a73e8', backgroundColor:'rgba(26,115,232,.1)',
+      fill:true, tension:.4, pointRadius:3, pointBackgroundColor:'#1a73e8', borderWidth:2
+    }]},
+    options:{...CHART_DEFAULTS}
+  });
+
+  // Trend line - payment
+  charts.lp = new Chart(document.getElementById('chart-trend-pay'), {
+    type:'line',
+    data:{labels:tLabels, datasets:[{
+      data:trend.map(t=>t.payment), borderColor:'#72C040', backgroundColor:'rgba(114,192,64,.1)',
+      fill:true, tension:.4, pointRadius:3, pointBackgroundColor:'#72C040', borderWidth:2
+    }]},
+    options:{...CHART_DEFAULTS}
+  });
+}
+
+// ── ROWS ───────────────────────────────────────────────────────────────────
+async function loadRows(team='', factory=0) {
+  let url = '/api/rows?';
+  if (team)    url += 'team=' + team + '&';
+  if (factory) url += 'factory=1&';
+  const res = await fetch(url);
+  if (!res.ok) return;
+  allRows = await res.json();
+  filteredRows = allRows;
+  renderTable(filteredRows);
+  buildTeamPills();
+}
+
+function renderTable(rows) {
+  document.getElementById('rows-count').textContent = rows.length + ' records';
+  if (!rows.length) {
+    document.getElementById('records-tbody').innerHTML = '<tr><td colspan="20" class="empty">No records found</td></tr>';
+    document.getElementById('records-thead').innerHTML = '';
+    return;
+  }
+  // Determine display columns (skip internal _ keys, skip all-zero numeric cols)
+  const skip = new Set(['_team','_tab','_factory_tab']);
+  const allKeys = [...new Set(rows.flatMap(r => Object.keys(r).filter(k => !k.startsWith('_'))))];
+  // Reorder: DATE first, then factories, then TOTAL
+  const priority = ['DATE','_team_display'];
+  const cols = ['_team','_tab',...allKeys.filter(k => !skip.has(k))];
+  const displayCols = [
+    {key:'_team', label:'Team'},
+    {key:'_tab',  label:'Tab'},
+    ...allKeys.filter(k=>!skip.has(k)).map(k=>({key:k,label:k}))
+  ];
+
+  document.getElementById('records-thead').innerHTML =
+    '<tr>' + displayCols.map(c=>`<th>${esc(c.label)}</th>`).join('') + '</tr>';
+
+  document.getElementById('records-tbody').innerHTML = rows.slice(0,300).map(r => `
+    <tr>
+      ${displayCols.map(c => {
+        const v = c.key === '_team' ? r._team : c.key === '_tab' ? r._tab : r[c.key];
+        if (c.key === '_team') return `<td><span class="badge blue">${esc(v||'')}</span>${r._factory_tab?'<span class="badge factory" style="margin-left:4px">🏭</span>':''}</td>`;
+        if (c.key === '_tab')  return `<td style="color:var(--muted)">${esc(v||'')}</td>`;
+        if (typeof v === 'number' && v > 0) return `<td class="mono">${v.toLocaleString('en-IN',{maximumFractionDigits:1})}</td>`;
+        if (c.label === 'STATUS') return `<td>${statusBadge(v)}</td>`;
+        return `<td>${esc(String(v??''))}</td>`;
+      }).join('')}
+    </tr>`).join('');
+}
+
+function buildTeamPills() {
+  const teams = [...new Set(allRows.map(r => r._team))].sort();
+  document.getElementById('team-pills').innerHTML =
+    `<button class="pill on" id="pill-all" onclick="filterByTeam('')">All</button>` +
+    teams.map(t=>`<button class="pill" id="pill-${t}" onclick="filterByTeam('${t}')">${t}</button>`).join('');
+}
+
+function filterByTeam(team) {
+  activeTeam = team;
+  showRows();
+  document.querySelectorAll('.team-pills .pill').forEach(p => p.classList.remove('on'));
+  const target = document.getElementById('pill-' + (team || 'all'));
+  if (target) target.classList.add('on');
+  filteredRows = team ? allRows.filter(r => r._team === team) : allRows;
+  if (factoryOnly) filteredRows = filteredRows.filter(r => r._factory_tab);
+  applySearch();
+}
+
+function filterTable() { applySearch(); }
+function applySearch() {
+  const q = (document.getElementById('search-input').value || '').toLowerCase();
+  const base = activeTeam ? allRows.filter(r => r._team === activeTeam) : allRows;
+  const fac  = factoryOnly ? base.filter(r => r._factory_tab) : base;
+  filteredRows = q ? fac.filter(r => Object.values(r).some(v => String(v).toLowerCase().includes(q))) : fac;
+  renderTable(filteredRows);
+}
+
+// ── VIEWS ──────────────────────────────────────────────────────────────────
+function showRows() {
+  document.getElementById('rows-section').style.display = '';
+  document.getElementById('view-rows-btn').classList.add('on');
+  document.getElementById('rows-section').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function toggleFactory() {
+  factoryOnly = !factoryOnly;
+  const btn = document.getElementById('factory-btn');
+  btn.textContent = factoryOnly ? '🏭 Factory Only' : '🏭 All Tabs';
+  btn.classList.toggle('on', factoryOnly);
+  applySearch();
+}
+
+async function refresh() {
+  const btn = document.getElementById('sync-btn');
+  btn.disabled = true; btn.textContent = '⟳ Syncing…';
+  await fetch('/api/refresh');
+  await loadSummary();
+  await loadRows(activeTeam, factoryOnly ? 1 : 0);
+  btn.disabled = false; btn.textContent = '⟳ Refresh';
+}
+
+// ── UTILS ──────────────────────────────────────────────────────────────────
+function setText(id, v) { const el = document.getElementById(id); if(el) el.textContent = v; }
+function fmt(n)  { return typeof n === 'number' ? (n%1===0?n:n.toFixed(1)) : n; }
+function fmtN(n) { return Number(n||0).toLocaleString('en-IN',{maximumFractionDigits:0}); }
+function esc(s)  { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function statusBadge(v) {
+  if (!v) return `<span class="badge muted">—</span>`;
+  const l = String(v).toLowerCase();
+  if (l.includes('paid') && !l.includes('unpaid')) return `<span class="badge green">✓ ${esc(v)}</span>`;
+  if (l.includes('unpaid')||l.includes('pending')) return `<span class="badge orange">⏳ ${esc(v)}</span>`;
+  return `<span class="badge muted">${esc(v)}</span>`;
+}
+
+// ── START ──────────────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
